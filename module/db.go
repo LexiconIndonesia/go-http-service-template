@@ -1,19 +1,20 @@
 package module
 
 import (
-	"database/sql"
 	"errors"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
-	mysqlClient *sql.DB
+	Pool *pgxpool.Pool
 )
 
-func SetDatabase(database *sql.DB) error {
+func SetDatabase(newPool *pgxpool.Pool) error {
 
-	if database == nil {
+	if newPool == nil {
 		return errors.New("cannot assign nil database")
 	}
-	mysqlClient = database
+	Pool = newPool
 	return nil
 }

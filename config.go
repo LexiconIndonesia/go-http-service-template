@@ -30,40 +30,41 @@ func loadEnvUint(key string, result *uint) {
 
 /* Configuration */
 
-/*
-*
-
-	MYSQL Configuration
-*/
-type mysqlConfig struct {
+/* PgSQL Configuration */
+type pgSqlConfig struct {
 	Host     string `json:"host"`
 	Port     uint   `json:"port"`
 	Database string `json:"database"`
-	Username string `json:"username"`
+	SslMode  string `json:"ssl_mode"`
+	User     string `json:"user"`
 	Password string `json:"password"`
 }
 
-func (m mysqlConfig) ConnStr() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", m.Username, m.Password, m.Host, m.Port, m.Database)
+func (p pgSqlConfig) ConnStr() string {
+	return fmt.Sprintf("host=%s port=%d user=%s password=%s database=%s sslmode=%s", p.Host, p.Port, p.User, p.Password, p.Database, p.SslMode)
 }
 
-func defaultMysqlConfig() mysqlConfig {
-	return mysqlConfig{
+func defaultPgSql() pgSqlConfig {
+	return pgSqlConfig{
 		Host:     "localhost",
-		Port:     3306,
-		Database: "document",
-		Username: "root",
-		Password: "password",
+		Port:     5432,
+		Database: "database",
+		User:     "",
+		Password: "",
+		SslMode:  "disable",
 	}
 }
 
-func (m *mysqlConfig) loadFromEnv() {
-	loadEnvString("APP_MYSQL_HOST", &m.Host)
-	loadEnvUint("APP_MYSQL_PORT", &m.Port)
-	loadEnvString("APP_MYSQL_DB_NAME", &m.Database)
-	loadEnvString("APP_MYSQL_USERNAME", &m.Username)
-	loadEnvString("APP_MYSQL_PASSWORD", &m.Password)
+func (p *pgSqlConfig) loadFromEnv() {
+	loadEnvString("POSTGRES_HOST", &p.Host)
+	loadEnvUint("POSTGRES_PORT", &p.Port)
+	loadEnvString("POSTGRES_DB_NAME", &p.Database)
+	loadEnvString("POSTGRES_SSLMODE", &p.SslMode)
+	loadEnvString("POSTGRES_USERNAME", &p.User)
+	loadEnvString("POSTGRES_PASSWORD", &p.Password)
 }
+
+/* Listen Configuration */
 
 type listenConfig struct {
 	Host string `json:"host"`
@@ -82,25 +83,29 @@ func defaultListenConfig() listenConfig {
 }
 
 func (l *listenConfig) loadFromEnv() {
-
-	loadEnvString("APP_LISTEN_HOST", &l.Host)
-	loadEnvUint("APP_LISTEN_PORT", &l.Port)
-
+	loadEnvString("LISTEN_HOST", &l.Host)
+	loadEnvUint("LISTEN_PORT", &l.Port)
 }
 
 type config struct {
-	Listen listenConfig `json:"listen"`
-	MySql  mysqlConfig  `json:"mysql"`
+	Listen        listenConfig `json:"listen"`
+	PgSql         pgSqlConfig  `json:"pgsql"`
+	BackendApiKey string       `json:"api_key"`
+	ServerSalt    string       `json:"salt"`
 }
 
 func (c *config) loadFromEnv() {
 	c.Listen.loadFromEnv()
-	c.MySql.loadFromEnv()
+	c.PgSql.loadFromEnv()
+	loadEnvString("API_KEY", &c.BackendApiKey)
+	loadEnvString("SALT", &c.ServerSalt)
 }
 
 func defaultConfig() config {
 	return config{
-		Listen: defaultListenConfig(),
-		MySql:  defaultMysqlConfig(),
+		Listen:        defaultListenConfig(),
+		PgSql:         defaultPgSql(),
+		BackendApiKey: "",
+		ServerSalt:    "",
 	}
 }

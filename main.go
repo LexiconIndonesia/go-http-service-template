@@ -1,14 +1,14 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"lexicon/go-template/module"
-	"net/http"
+
+	"github.com/golang-module/carbon/v2"
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -21,41 +21,33 @@ func main() {
 	cfg := defaultConfig()
 	cfg.loadFromEnv()
 
-	log.Debug().Any("config", cfg).Msg("config loaded")
+	ctx := context.Background()
 
-	// INITIATE DATABASES
-
-	// MYSQL
-	mysqlClient, err := sql.Open("mysql", cfg.MySql.ConnStr())
-
-	if err != nil {
-		log.Error().Err(err).Msg("Unable to connect to MySQL Database")
-	}
-	defer mysqlClient.Close()
-
-	module.SetDatabase(mysqlClient)
-
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-
-	// // Set a timeout value on the request context (ctx), that will signal
-	// // through ctx.Done() that the request has timed out and further
-	// // processing should be stopped.
-	// r.Use(middleware.Timeout(60 * time.Second))
-
-	r.Route("/v1", func(r chi.Router) {
-		r.Mount("/test", module.Router())
+	carbon.SetDefault(carbon.Default{
+		Layout:       carbon.ISO8601Layout,
+		Timezone:     carbon.UTC,
+		WeekStartsAt: carbon.Monday,
+		Locale:       "en",
 	})
 
-	log.Info().Msg("Starting up server...")
+	// INITIATE DATABASES
+	// PGSQL
+	pgsqlClient, err := pgxpool.New(ctx, cfg.PgSql.ConnStr())
 
-	if err := http.ListenAndServe(cfg.Listen.Addr(), r); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start the server")
-		return
+	if err != nil {
+		log.Error().Err(err).Msg("Unable to connect to PGSQL Database")
+	}
+	defer pgsqlClient.Close()
+
+	module.SetDatabase(pgsqlClient)
+
+	// INITIATE SERVER
+	server, err := NewAppHttpServer(cfg)
+
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to start the server")
 	}
 
-	log.Info().Msg("Server Stopped")
+	server.setupRoute()
+	server.start()
 }

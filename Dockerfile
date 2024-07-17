@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /definition
+RUN CGO_ENABLED=0 GOOS=linux go build -o /application
 
 # Run the tests in the container
 # FROM build-stage AS run-test-stage
@@ -19,10 +19,10 @@ FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
 WORKDIR /
 
-COPY --from=build-stage /definition /definition
+COPY --from=build-stage /application /application
 
-EXPOSE $REGULATORY_LISTEN_PORT
+EXPOSE $LISTEN_PORT
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/definition"]
+ENTRYPOINT ["/application"]
