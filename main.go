@@ -29,7 +29,6 @@ func main() {
 
 	// INITIATE DATABASES
 	// PGSQL
-	// PGSQL
 	config, err := pgxpool.ParseConfig(cfg.PgSql.ConnStr())
 
 	// logger
