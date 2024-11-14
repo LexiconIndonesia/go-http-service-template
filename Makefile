@@ -17,9 +17,6 @@ integration-test:
 install:
 	go mod tidy && go mod vendor
 
-.PHONY: run-dev
-run-dev:
-	docker-compose up --build
-.PHONY: seed
-seed:
-	go run database/seeders/seeders.go
+.PHONY: build
+build:
+	go build -o $(BIN_DIR)/app

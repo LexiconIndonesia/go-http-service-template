@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
-	"lexicon/go-template/module"
-
-	"github.com/golang-module/carbon/v2"
+	"lexicon/go-template/common/db"
+	"lexicon/go-template/repository"
 
 	"github.com/rs/zerolog/log"
 
+	zerolog "github.com/jackc/pgx-zerolog"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/joho/godotenv"
+
+	_ "github.com/samber/lo"
+	_ "github.com/samber/mo"
 )
 
 func main() {
@@ -23,23 +27,27 @@ func main() {
 
 	ctx := context.Background()
 
-	carbon.SetDefault(carbon.Default{
-		Layout:       carbon.ISO8601Layout,
-		Timezone:     carbon.UTC,
-		WeekStartsAt: carbon.Monday,
-		Locale:       "en",
-	})
-
 	// INITIATE DATABASES
 	// PGSQL
-	pgsqlClient, err := pgxpool.New(ctx, cfg.PgSql.ConnStr())
+	// PGSQL
+	config, err := pgxpool.ParseConfig(cfg.PgSql.ConnStr())
 
+	// logger
+	logger := zerolog.NewLogger(log.Logger)
+
+	config.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   logger,
+		LogLevel: tracelog.LogLevelInfo,
+	}
+	pgsqlClient, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to connect to PGSQL Database")
 	}
 	defer pgsqlClient.Close()
 
-	module.SetDatabase(pgsqlClient)
+	db.SetDatabase(pgsqlClient)
+	queries := repository.New(pgsqlClient)
+	db.SetQueries(queries)
 
 	// INITIATE SERVER
 	server, err := NewAppHttpServer(cfg)

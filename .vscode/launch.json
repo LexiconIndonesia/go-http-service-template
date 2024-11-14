@@ -8,7 +8,6 @@
       "mode": "debug",
       "program": "${workspaceFolder}",
       "args": [],
-      "showLog": true
     }
   ]
 }

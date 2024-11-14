@@ -142,3 +142,5 @@ $RECYCLE.BIN/
 config.yml
 .env
 db/*
+bin/*
+_output/*
