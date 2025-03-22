@@ -1,9 +1,13 @@
 package main
 
 import (
-	"lexicon/go-template/module"
+	"context"
+	"errors"
 	"net/http"
 	"time"
+
+	"github.com/adryanev/go-http-service-template/common/db"
+	"github.com/adryanev/go-http-service-template/module"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -14,10 +18,11 @@ import (
 type AppHttpServer struct {
 	router *chi.Mux
 	cfg    config
+	server *http.Server
+	db     *db.DB
 }
 
 func NewAppHttpServer(cfg config) (*AppHttpServer, error) {
-
 	r := chi.NewRouter()
 
 	// Basic CORS
@@ -38,9 +43,9 @@ func NewAppHttpServer(cfg config) (*AppHttpServer, error) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// // Set a timeout value on the request context (ctx), that will signal
-	// // through ctx.Done() that the request has timed out and further
-	// // processing should be stopped.
+	// Set a timeout value on the request context (ctx), that will signal
+	// through ctx.Done() that the request has timed out and further
+	// processing should be stopped.
 	r.Use(middleware.Timeout(2 * time.Minute))
 
 	server := &AppHttpServer{
@@ -48,29 +53,63 @@ func NewAppHttpServer(cfg config) (*AppHttpServer, error) {
 		cfg:    cfg,
 	}
 	return server, nil
+}
 
+// SetDB sets the database dependency
+func (s *AppHttpServer) SetDB(db *db.DB) {
+	s.db = db
 }
 
 func (s *AppHttpServer) setupRoute() {
 	r := s.router
 	// cfg := s.cfg
+
+	// Check if DB is set
+	if s.db == nil {
+		log.Warn().Msg("DB dependency not set, using legacy global access")
+	}
+
+	// Create the module with dependency injection
+	mod := module.NewModule(s.db)
+
 	r.Route("/v1", func(r chi.Router) {
 		// r.Use(middlewares.AccessTime())
 		// r.Use(middlewares.ApiKey(cfg.BackendApiKey, cfg.ServerSalt))
 		// r.Use(middlewares.RequestSignature(cfg.ServerSalt))
-		r.Mount("/module", module.Router())
+
+		// Use new module structure with DI
+		r.Mount("/module", mod.Router())
+
+		// Legacy module access (will be deprecated)
+		r.Mount("/legacy-module", module.Router())
 	})
 }
 
-func (s *AppHttpServer) start() {
+func (s *AppHttpServer) start() error {
 	r := s.router
 	cfg := s.cfg
 	log.Info().Msg("Starting up server...")
 
-	if err := http.ListenAndServe(cfg.Listen.Addr(), r); err != nil {
-		log.Fatal().Err(err).Msg("Failed to start the server")
-		return
+	s.server = &http.Server{
+		Addr:         cfg.Listen.Addr(),
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Info().Msg("Server Stopped")
+	// This starts the server in a goroutine from main
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	return nil
+}
+
+// stop gracefully shuts down the server
+func (s *AppHttpServer) stop(ctx context.Context) error {
+	if s.server == nil {
+		return nil
+	}
+	return s.server.Shutdown(ctx)
 }
