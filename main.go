@@ -154,15 +154,6 @@ func setupDatabase(ctx context.Context, cfg config) (*db.DB, error) {
 		return nil, fmt.Errorf("creating DB handler: %w", err)
 	}
 
-	// Support legacy global access (will be removed in future)
-	if err := db.SetDatabase(pgsqlClient); err != nil {
-		return nil, fmt.Errorf("setting database: %w", err)
-	}
-
-	if err := db.SetQueries(queries); err != nil {
-		return nil, fmt.Errorf("setting queries: %w", err)
-	}
-
 	return dbConn, nil
 }
 
