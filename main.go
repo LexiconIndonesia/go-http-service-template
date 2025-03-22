@@ -22,6 +22,9 @@ import (
 	_ "github.com/adryanev/go-http-service-template/docs"
 	_ "github.com/samber/lo"
 	_ "github.com/samber/mo"
+
+	"github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go/jetstream"
 )
 
 // @title          Go HTTP Service API
@@ -74,6 +77,11 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to setup NATS client")
 	}
 	defer natsClient.Close()
+
+	// Setup global subscriptions
+	if err := setupGlobalSubscriptions(natsClient); err != nil {
+		log.Fatal().Err(err).Msg("Failed to setup global subscriptions")
+	}
 
 	// INITIATE SERVER
 	server, err := NewAppHttpServer(cfg)
@@ -172,4 +180,72 @@ func setupNatsClient(cfg config) (*messaging.NatsClient, error) {
 	}
 
 	return client, nil
+}
+
+// setupGlobalSubscriptions sets up handlers for all NATS messages
+func setupGlobalSubscriptions(natsClient *messaging.NatsClient) error {
+	// Create a simple message handler function for all NATS messages
+	globalHandler := func(msg *nats.Msg) error {
+		log.Debug().
+			Str("subject", msg.Subject).
+			Str("data", string(msg.Data)).
+			Msg("Received global NATS message")
+		return nil
+	}
+
+	// Create a JetStream handler for persistent messages
+	jsHandler := func(msg jetstream.Msg) error {
+		log.Debug().
+			Str("subject", msg.Subject()).
+			Str("data", string(msg.Data())).
+			Msg("Received global JetStream message")
+		return nil
+	}
+
+	// Subscribe to all messages using the ">" wildcard
+	_, err := messaging.SubscribeToAll(natsClient, globalHandler)
+	if err != nil {
+		return fmt.Errorf("failed to create global subscription: %w", err)
+	}
+
+	// Subscribe to specific subjects that need special handling
+	_, err = messaging.SubscribeToSubject(natsClient, "notifications.*", func(msg *nats.Msg) error {
+		log.Info().
+			Str("subject", msg.Subject).
+			Str("data", string(msg.Data)).
+			Msg("Notification received")
+		return nil
+	})
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to create notifications subscription")
+	}
+
+	// Subscribe to JetStream messages
+	// This creates a stream and consumer for all messages (using ">")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Create the ALL_MESSAGES stream if it doesn't exist
+	streamConfig := jetstream.StreamConfig{
+		Name:     "ALL_MESSAGES",
+		Subjects: []string{">"},
+		Storage:  jetstream.MemoryStorage,
+	}
+
+	// Try to create the JetStream stream
+	_, err = natsClient.CreateStream(ctx, streamConfig)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to create ALL_MESSAGES stream, JetStream subscription not set up")
+	} else {
+		// Set up JetStream subscription
+		_, err = messaging.SubscribeToAllJetStream(natsClient, "ALL_MESSAGES", jsHandler)
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to create JetStream subscription")
+		} else {
+			log.Info().Msg("Global JetStream subscription handler set up successfully")
+		}
+	}
+
+	log.Info().Msg("Global NATS subscription handlers set up successfully")
+	return nil
 }
