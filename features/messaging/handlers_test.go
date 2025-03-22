@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/adryanev/go-http-service-template/common/messaging"
+	"github.com/LexiconIndonesia/go-http-service-template/common/messaging"
 	"github.com/go-chi/chi/v5"
 )
 

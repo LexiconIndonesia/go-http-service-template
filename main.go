@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/adryanev/go-http-service-template/common/db"
-	"github.com/adryanev/go-http-service-template/common/messaging"
-	"github.com/adryanev/go-http-service-template/repository"
+	"github.com/LexiconIndonesia/go-http-service-template/common/db"
+	"github.com/LexiconIndonesia/go-http-service-template/common/messaging"
+	"github.com/LexiconIndonesia/go-http-service-template/repository"
 
 	"github.com/rs/zerolog/log"
 
@@ -19,7 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/joho/godotenv"
 
-	_ "github.com/adryanev/go-http-service-template/docs"
+	_ "github.com/LexiconIndonesia/go-http-service-template/docs"
 	_ "github.com/samber/lo"
 	_ "github.com/samber/mo"
 

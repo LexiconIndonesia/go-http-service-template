@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/adryanev/go-http-service-template/common/db"
-	"github.com/adryanev/go-http-service-template/common/models"
+	"github.com/LexiconIndonesia/go-http-service-template/common/db"
+	"github.com/LexiconIndonesia/go-http-service-template/common/models"
 )
 
 func TestCreateUser(t *testing.T) {

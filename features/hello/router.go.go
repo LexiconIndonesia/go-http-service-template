@@ -3,9 +3,9 @@ package hello
 import (
 	"net/http"
 
-	"github.com/adryanev/go-http-service-template/common/db"
-	"github.com/adryanev/go-http-service-template/common/messaging"
-	"github.com/adryanev/go-http-service-template/common/utils"
+	"github.com/LexiconIndonesia/go-http-service-template/common/db"
+	"github.com/LexiconIndonesia/go-http-service-template/common/messaging"
+	"github.com/LexiconIndonesia/go-http-service-template/common/utils"
 
 	"github.com/go-chi/chi/v5"
 )

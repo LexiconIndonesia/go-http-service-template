@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/adryanev/go-http-service-template/repository"
+	"github.com/LexiconIndonesia/go-http-service-template/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
