@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+func getEnv(key, defaultValue string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		return defaultValue
+	}
+	return value
+}
+
 func loadEnvString(key string, result *string) {
 	s, ok := os.LookupEnv(key)
 
@@ -87,25 +95,79 @@ func (l *listenConfig) loadFromEnv() {
 	loadEnvUint("LISTEN_PORT", &l.Port)
 }
 
+type hostConfig struct {
+	Host string `json:"host"`
+}
+
+func (h *hostConfig) loadFromEnv() {
+	loadEnvString("HOST", &h.Host)
+}
+
+func defaultHostConfig() hostConfig {
+	return hostConfig{
+		Host: "localhost",
+	}
+}
+
+type natsConfig struct {
+	URL      string
+	Username string
+	Password string
+}
+
+func (c *natsConfig) loadFromEnv() {
+	c.URL = getEnv("NATS_URL", "nats://localhost:4222")
+	c.Username = getEnv("NATS_USERNAME", "")
+	c.Password = getEnv("NATS_PASSWORD", "")
+}
+
+func defaultNatsConfig() natsConfig {
+	return natsConfig{
+		URL:      "nats://localhost:4222",
+		Username: "",
+		Password: "",
+	}
+}
+
+type securityConfig struct {
+	BackendApiKey string
+	ServerSalt    string
+}
+
+func (s *securityConfig) loadFromEnv() {
+	s.BackendApiKey = getEnv("BACKEND_API_KEY", "")
+	s.ServerSalt = getEnv("SERVER_SALT", "")
+}
+
+func defaultSecurityConfig() securityConfig {
+	return securityConfig{
+		BackendApiKey: "",
+		ServerSalt:    "",
+	}
+}
+
 type config struct {
-	Listen        listenConfig `json:"listen"`
-	PgSql         pgSqlConfig  `json:"pgsql"`
-	BackendApiKey string       `json:"api_key"`
-	ServerSalt    string       `json:"salt"`
+	Host     hostConfig
+	Listen   listenConfig
+	PgSql    pgSqlConfig
+	Security securityConfig
+	Nats     natsConfig
 }
 
 func (c *config) loadFromEnv() {
+	c.Host.loadFromEnv()
 	c.Listen.loadFromEnv()
 	c.PgSql.loadFromEnv()
-	loadEnvString("API_KEY", &c.BackendApiKey)
-	loadEnvString("SALT", &c.ServerSalt)
+	c.Security.loadFromEnv()
+	c.Nats.loadFromEnv()
 }
 
 func defaultConfig() config {
 	return config{
-		Listen:        defaultListenConfig(),
-		PgSql:         defaultPgSql(),
-		BackendApiKey: "",
-		ServerSalt:    "",
+		Host:     defaultHostConfig(),
+		Listen:   defaultListenConfig(),
+		PgSql:    defaultPgSql(),
+		Security: defaultSecurityConfig(),
+		Nats:     defaultNatsConfig(),
 	}
 }
