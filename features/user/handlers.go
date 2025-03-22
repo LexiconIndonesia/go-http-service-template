@@ -1,24 +1,27 @@
-package module
+package user
 
 import (
 	"encoding/json"
 	"net/http"
 	"time"
 
-	"github.com/adryanev/go-http-service-template/common/models"
-	"github.com/adryanev/go-http-service-template/common/utils"
+	"github.com/LexiconIndonesia/go-http-service-template/common/db"
+	"github.com/LexiconIndonesia/go-http-service-template/common/models"
+	"github.com/LexiconIndonesia/go-http-service-template/common/utils"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
-// userHandler handles user-related requests
-func (m *Module) userHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		m.createUser(w, r)
-	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+// User handles user-related requests
+type User struct {
+	DB *db.DB
+}
+
+// NewUser creates a new user handler
+func NewUser(db *db.DB) *User {
+	return &User{
+		DB: db,
 	}
 }
 
@@ -40,6 +43,7 @@ type UserCreationRequest struct {
 	Password  string `json:"password" example:"Password123!" validate:"required,min=8"`
 }
 
+// CreateUser creates a new user with the provided information
 // @Summary Create a new user
 // @Description Create a new user with the provided information
 // @Tags users
@@ -50,7 +54,7 @@ type UserCreationRequest struct {
 // @Failure 400 {object} utils.Response{error=string} "Invalid request body"
 // @Failure 500 {object} utils.Response{error=string} "Internal server error"
 // @Router /users [post]
-func (m *Module) createUser(w http.ResponseWriter, r *http.Request) {
+func (u *User) CreateUser(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var userReq UserCreationRequest
 	if err := json.NewDecoder(r.Body).Decode(&userReq); err != nil {

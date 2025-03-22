@@ -1,4 +1,4 @@
-module github.com/adryanev/go-http-service-template
+module github.com/LexiconIndonesia/go-http-service-template
 
 go 1.24.1
 

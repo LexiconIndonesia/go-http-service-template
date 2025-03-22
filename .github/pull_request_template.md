@@ -1,7 +1,10 @@
+# Pull Request
+
 ## Description
 <!-- Briefly describe the changes in this PR -->
 
 ## Type of change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
@@ -15,6 +18,7 @@
 <!-- Provide steps to test the changes -->
 
 ## Checklist
+
 - [ ] My code follows project code style
 - [ ] I have performed a self-review of my code
 - [ ] I have added tests that prove my fix is effective or my feature works

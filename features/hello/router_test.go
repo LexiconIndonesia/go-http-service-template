@@ -1,4 +1,4 @@
-package module
+package hello
 
 import (
 	"context"
@@ -7,15 +7,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/adryanev/go-http-service-template/common/db"
-	"github.com/adryanev/go-http-service-template/common/messaging"
-	"github.com/adryanev/go-http-service-template/repository"
+	"github.com/LexiconIndonesia/go-http-service-template/common/db"
+	"github.com/LexiconIndonesia/go-http-service-template/common/messaging"
+	"github.com/LexiconIndonesia/go-http-service-template/repository"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-func TestModuleRouter(t *testing.T) {
-	// Create a new module with nil dependencies (for testing only)
-	mod := NewModule(nil, nil)
+func TestHelloRouter(t *testing.T) {
+	// Create a new hello instance with nil dependencies (for testing only)
+	hello := NewHello(nil, nil)
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("GET", "/", nil)
@@ -27,7 +27,7 @@ func TestModuleRouter(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Get the router and serve the request
-	handler := mod.Router()
+	handler := hello.Router()
 	handler.ServeHTTP(rr, req)
 
 	// Check the status code
@@ -60,21 +60,51 @@ func TestModuleRouter(t *testing.T) {
 	}
 }
 
-func TestModuleWithMockDB(t *testing.T) {
-	// Create mock dependencies
-	mockDB := NewMockDB()
-	mockNats := NewMockNatsClient()
+func TestHelloWithDependencies(t *testing.T) {
+	// Create mock DB and NATS client
+	mockDB := &db.DB{}
+	mockNatsClient := &messaging.NatsClient{}
 
-	// Create a new module with the mock dependencies
-	mod := NewModule(mockDB.DB, mockNats.NatsClient)
+	// Create a new hello with dependencies
+	hello := NewHello(mockDB, mockNatsClient)
 
-	// Test the module
-	if mod.DB != mockDB.DB {
+	// Test that dependencies are properly injected
+	if hello.DB != mockDB {
 		t.Errorf("expected DB to be the mock DB instance")
 	}
 
-	if mod.NatsClient != mockNats.NatsClient {
+	if hello.NatsClient != mockNatsClient {
 		t.Errorf("expected NatsClient to be the mock NATS client instance")
+	}
+
+	// Test that the router works with the dependencies
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := hello.Router()
+	handler.ServeHTTP(rr, req)
+
+	// Check the status code
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	// Parse the response
+	var response map[string]interface{}
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("Failed to parse response body: %v", err)
+	}
+
+	// Verify the response
+	message, ok := response["message"].(string)
+	if !ok {
+		t.Errorf("Expected message to be a string, got %T", response["message"])
+	} else if message != "Hello with dependency injection" {
+		t.Errorf("Expected message to be 'Hello with dependency injection', got %v", message)
 	}
 }
 

@@ -28,7 +28,7 @@ repository:
   - changed-files:
     - any-glob-to-any-file: [repository/**/*]
 
-# Add 'module' label to changes in module directory
-module:
+# Add 'feature' label to changes in module directory
+feature:
   - changed-files:
-    - any-glob-to-any-file: [module/**/*]
+    - any-glob-to-any-file: [internal/**/*]
