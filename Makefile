@@ -20,3 +20,17 @@ install:
 .PHONY: build
 build:
 	go build -o $(BIN_DIR)/app
+
+# Development targets
+.PHONY: dev
+dev:
+	air
+
+.PHONY: docker-dev
+docker-dev:
+	docker build -t go-app-dev -f dev.Dockerfile .
+	docker run -p 2345:2345 -p 8080:8080 -v $(shell pwd):/app go-app-dev
+
+.PHONY: docker-dev-build
+docker-dev-build:
+	docker build -t go-app-dev -f dev.Dockerfile .
