@@ -5,6 +5,22 @@ on:
     branches: [ main ]
 
 jobs:
+  trigger-gemini-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Gemini Review
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo, number } = context.issue;
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body: '/gemini review'
+            });
+
   lint:
     runs-on: ubuntu-latest
     steps:
