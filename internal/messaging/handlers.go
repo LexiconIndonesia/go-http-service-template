@@ -1,4 +1,4 @@
-package module
+package messaging
 
 import (
 	"context"
@@ -14,6 +14,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Messaging handles messaging-related requests
+type Messaging struct {
+	NatsClient *messaging.NatsClient
+}
+
+// NewMessaging creates a new messaging handler
+func NewMessaging(natsClient *messaging.NatsClient) *Messaging {
+	return &Messaging{
+		NatsClient: natsClient,
+	}
+}
+
 // MessageRequest represents a request to publish a message
 type MessageRequest struct {
 	Subject string          `json:"subject" validate:"required" example:"notifications.user.created"`
@@ -27,6 +39,7 @@ type MessageResponse struct {
 	Subject  string `json:"subject" example:"notifications.user.created"`
 }
 
+// PublishMessage publishes a message to the specified subject
 // @Summary Publish a message
 // @Description Publish a message to the specified subject
 // @Tags messaging
@@ -37,7 +50,7 @@ type MessageResponse struct {
 // @Failure 400 {object} utils.Response{error=string} "Invalid request body"
 // @Failure 500 {object} utils.Response{error=string} "Internal server error"
 // @Router /messaging/publish [post]
-func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
+func (h *Messaging) PublishMessage(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req MessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -58,7 +71,7 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if NATS client is available
-	if m.NatsClient == nil {
+	if h.NatsClient == nil {
 		log.Error().Msg("NATS client is not available")
 		utils.WriteError(w, http.StatusInternalServerError, "Messaging service is not available")
 		return
@@ -71,7 +84,7 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	// Check if we need to create a stream for this subject
 	// This would normally be done during service setup, but for demo we'll do it here
 	streamName := "MESSAGES"
-	_, err := ensureStream(ctx, m.NatsClient, streamName, []string{req.Subject, fmt.Sprintf("%s.*", req.Subject)})
+	_, err := ensureStream(ctx, h.NatsClient, streamName, []string{req.Subject, fmt.Sprintf("%s.*", req.Subject)})
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to ensure stream exists")
 		utils.WriteError(w, http.StatusInternalServerError, "Failed to ensure messaging infrastructure")
@@ -79,7 +92,7 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Publish message to JetStream
-	ack, err := m.NatsClient.PublishAsync(req.Subject, req.Data)
+	ack, err := h.NatsClient.PublishAsync(req.Subject, req.Data)
 	if err != nil {
 		log.Error().Err(err).Str("subject", req.Subject).Msg("Failed to publish message")
 		utils.WriteError(w, http.StatusInternalServerError, "Failed to publish message")
@@ -107,6 +120,7 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// SubscribeWebSocket subscribes to messages on a subject using WebSocket
 // @Summary Subscribe to a subject
 // @Description Subscribe to messages on a subject using WebSocket
 // @Tags messaging
@@ -115,7 +129,7 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} utils.Response{message=string} "Subscription information"
 // @Failure 400 {object} utils.Response{error=string} "Invalid subject"
 // @Router /messaging/subscribe/{subject} [get]
-func (m *Module) subscribeWebSocket(w http.ResponseWriter, r *http.Request) {
+func (h *Messaging) SubscribeWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Get subject from URL
 	subject := chi.URLParam(r, "subject")
 	if subject == "" {

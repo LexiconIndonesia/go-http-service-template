@@ -146,12 +146,28 @@ func defaultSecurityConfig() securityConfig {
 	}
 }
 
+// AppConfig represents application-specific configuration
+type appConfig struct {
+	Environment string // "production", "development", etc.
+}
+
+func (a *appConfig) loadFromEnv() {
+	a.Environment = getEnv("APP_ENV", "development")
+}
+
+func defaultAppConfig() appConfig {
+	return appConfig{
+		Environment: "development",
+	}
+}
+
 type config struct {
 	Host     hostConfig
 	Listen   listenConfig
 	PgSql    pgSqlConfig
 	Security securityConfig
 	Nats     natsConfig
+	App      appConfig
 }
 
 func (c *config) loadFromEnv() {
@@ -160,6 +176,7 @@ func (c *config) loadFromEnv() {
 	c.PgSql.loadFromEnv()
 	c.Security.loadFromEnv()
 	c.Nats.loadFromEnv()
+	c.App.loadFromEnv()
 }
 
 func defaultConfig() config {
@@ -169,5 +186,6 @@ func defaultConfig() config {
 		PgSql:    defaultPgSql(),
 		Security: defaultSecurityConfig(),
 		Nats:     defaultNatsConfig(),
+		App:      defaultAppConfig(),
 	}
 }

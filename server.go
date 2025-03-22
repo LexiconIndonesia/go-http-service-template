@@ -8,7 +8,9 @@ import (
 
 	"github.com/adryanev/go-http-service-template/common/db"
 	"github.com/adryanev/go-http-service-template/common/messaging"
-	"github.com/adryanev/go-http-service-template/module"
+	helloPkg "github.com/adryanev/go-http-service-template/internal/hello"
+	messagingPkg "github.com/adryanev/go-http-service-template/internal/messaging"
+	userPkg "github.com/adryanev/go-http-service-template/internal/user"
 
 	_ "github.com/adryanev/go-http-service-template/docs"
 	"github.com/go-chi/chi/v5"
@@ -83,7 +85,9 @@ func (s *AppHttpServer) setupRoute() {
 	}
 
 	// Create the module with dependency injection
-	mod := module.NewModule(s.db, s.natsClient)
+	helloHandler := helloPkg.NewHello(s.db, s.natsClient)
+	messagingHandler := messagingPkg.NewMessaging(s.natsClient)
+	userHandler := userPkg.NewUser(s.db)
 
 	// API Documentation with Swagger
 	r.Get("/swagger/*", httpSwagger.Handler(
@@ -95,11 +99,13 @@ func (s *AppHttpServer) setupRoute() {
 		// r.Use(middlewares.ApiKey(cfg.BackendApiKey, cfg.ServerSalt))
 		// r.Use(middlewares.RequestSignature(cfg.ServerSalt))
 
-		// Use new module structure with DI
-		r.Mount("/module", mod.Router())
+		// Mount routers directly following the module convention
+		r.Mount("/messaging", messagingHandler.Router())
+		r.Mount("/users", userHandler.Router())
 
-		// Legacy module access (will be deprecated)
-		r.Mount("/legacy-module", module.Router())
+		// Use new module structure with DI for other routes
+		r.Mount("/module", helloHandler.Router())
+
 	})
 }
 

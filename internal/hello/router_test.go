@@ -1,4 +1,4 @@
-package module
+package hello
 
 import (
 	"context"
@@ -13,9 +13,9 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 )
 
-func TestModuleRouter(t *testing.T) {
+func TestHelloRouter(t *testing.T) {
 	// Create a new module with nil dependencies (for testing only)
-	mod := NewModule(nil, nil)
+	mod := NewHello(nil, nil)
 
 	// Create a new HTTP request
 	req, err := http.NewRequest("GET", "/", nil)
@@ -60,13 +60,13 @@ func TestModuleRouter(t *testing.T) {
 	}
 }
 
-func TestModuleWithMockDB(t *testing.T) {
+func TestHelloWithMockDB(t *testing.T) {
 	// Create mock dependencies
 	mockDB := NewMockDB()
 	mockNats := NewMockNatsClient()
 
 	// Create a new module with the mock dependencies
-	mod := NewModule(mockDB.DB, mockNats.NatsClient)
+	mod := NewHello(mockDB.DB, mockNats.NatsClient)
 
 	// Test the module
 	if mod.DB != mockDB.DB {
