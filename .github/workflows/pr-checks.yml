@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Vendor dependencies
+        run: go mod vendor
+
       - name: Run tests
         run: go test -v ./... -race
 
