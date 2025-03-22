@@ -150,7 +150,7 @@ func (c *NatsClient) Publish(subject string, data []byte) error {
 }
 
 // PublishAsync publishes a message to a subject asynchronously
-func (c *NatsClient) PublishAsync(subject string, data []byte) (nats.PubAckFuture, error) {
+func (c *NatsClient) PublishAsync(subject string, data []byte) (jetstream.PubAckFuture, error) {
 	if c.js == nil {
 		return nil, fmt.Errorf("JetStream not initialized")
 	}
@@ -167,17 +167,21 @@ func (c *NatsClient) PublishAsync(subject string, data []byte) (nats.PubAckFutur
 	// Wait for ack in a goroutine
 	go func() {
 		select {
-		case <-ack.Ok():
+		case pubAck := <-ack.Ok():
 			// Message was received by server
-			log.Debug().Str("subject", subject).
-				Str("stream", ack.Stream()).
-				Uint64("seq", ack.Sequence()).
-				Msg("Message acknowledged")
-		case <-ack.Err():
+			if pubAck != nil {
+				log.Debug().Str("subject", subject).
+					Str("stream", pubAck.Stream).
+					Uint64("seq", pubAck.Sequence).
+					Msg("Message acknowledged")
+			}
+		case err := <-ack.Err():
 			// There was an error with the message
-			log.Error().Err(ack.Err()).
-				Str("subject", subject).
-				Msg("Error publishing message")
+			if err != nil {
+				log.Error().Str("error", err.Error()).
+					Str("subject", subject).
+					Msg("Error publishing message")
+			}
 		case <-ctx.Done():
 			// Timeout waiting for ack
 			log.Warn().Str("subject", subject).

@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+func getEnv(key, defaultValue string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		return defaultValue
+	}
+	return value
+}
+
 func loadEnvString(key string, result *string) {
 	s, ok := os.LookupEnv(key)
 
@@ -88,11 +96,17 @@ func (l *listenConfig) loadFromEnv() {
 }
 
 type hostConfig struct {
-	// Add any necessary fields for host configuration
+	Host string `json:"host"`
 }
 
 func (h *hostConfig) loadFromEnv() {
-	// Implement loading from environment variables
+	loadEnvString("HOST", &h.Host)
+}
+
+func defaultHostConfig() hostConfig {
+	return hostConfig{
+		Host: "localhost",
+	}
 }
 
 type natsConfig struct {
@@ -107,41 +121,53 @@ func (c *natsConfig) loadFromEnv() {
 	c.Password = getEnv("NATS_PASSWORD", "")
 }
 
-type config struct {
-	Host          hostConfig
-	Listen        listenConfig
-	PgSql         pgSqlConfig
+func defaultNatsConfig() natsConfig {
+	return natsConfig{
+		URL:      "nats://localhost:4222",
+		Username: "",
+		Password: "",
+	}
+}
+
+type securityConfig struct {
 	BackendApiKey string
 	ServerSalt    string
-	Nats          natsConfig
+}
+
+func (s *securityConfig) loadFromEnv() {
+	s.BackendApiKey = getEnv("BACKEND_API_KEY", "")
+	s.ServerSalt = getEnv("SERVER_SALT", "")
+}
+
+func defaultSecurityConfig() securityConfig {
+	return securityConfig{
+		BackendApiKey: "",
+		ServerSalt:    "",
+	}
+}
+
+type config struct {
+	Host     hostConfig
+	Listen   listenConfig
+	PgSql    pgSqlConfig
+	Security securityConfig
+	Nats     natsConfig
 }
 
 func (c *config) loadFromEnv() {
 	c.Host.loadFromEnv()
 	c.Listen.loadFromEnv()
 	c.PgSql.loadFromEnv()
-	c.BackendApiKey = getEnv("BACKEND_API_KEY", "")
-	c.ServerSalt = getEnv("SERVER_SALT", "")
+	c.Security.loadFromEnv()
 	c.Nats.loadFromEnv()
 }
 
 func defaultConfig() config {
 	return config{
-		Host: hostConfig{
-			// ... existing code ...
-		},
-		Listen: listenConfig{
-			// ... existing code ...
-		},
-		PgSql: pgSqlConfig{
-			// ... existing code ...
-		},
-		BackendApiKey: "",
-		ServerSalt:    "",
-		Nats: natsConfig{
-			URL:      "nats://localhost:4222",
-			Username: "",
-			Password: "",
-		},
+		Host:     defaultHostConfig(),
+		Listen:   defaultListenConfig(),
+		PgSql:    defaultPgSql(),
+		Security: defaultSecurityConfig(),
+		Nats:     defaultNatsConfig(),
 	}
 }

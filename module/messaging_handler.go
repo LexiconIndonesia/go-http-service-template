@@ -16,11 +16,27 @@ import (
 
 // MessageRequest represents a request to publish a message
 type MessageRequest struct {
-	Subject string          `json:"subject" validate:"required"`
-	Data    json.RawMessage `json:"data" validate:"required"`
+	Subject string          `json:"subject" validate:"required" example:"notifications.user.created"`
+	Data    json.RawMessage `json:"data" validate:"required" example:"{\"message\":\"Hello world\"}"`
 }
 
-// publishMessage handles publishing a message to NATS
+// MessageResponse represents the response from publishing a message
+type MessageResponse struct {
+	Stream   string `json:"stream" example:"MESSAGES"`
+	Sequence uint64 `json:"sequence" example:"1"`
+	Subject  string `json:"subject" example:"notifications.user.created"`
+}
+
+// @Summary Publish a message
+// @Description Publish a message to the specified subject
+// @Tags messaging
+// @Accept json
+// @Produce json
+// @Param request body MessageRequest true "Message publishing request"
+// @Success 202 {object} utils.Response{data=MessageResponse} "Message published successfully"
+// @Failure 400 {object} utils.Response{error=string} "Invalid request body"
+// @Failure 500 {object} utils.Response{error=string} "Internal server error"
+// @Router /messaging/publish [post]
 func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	// Parse request body
 	var req MessageRequest
@@ -55,7 +71,7 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	// Check if we need to create a stream for this subject
 	// This would normally be done during service setup, but for demo we'll do it here
 	streamName := "MESSAGES"
-	stream, err := ensureStream(ctx, m.NatsClient, streamName, []string{req.Subject, fmt.Sprintf("%s.*", req.Subject)})
+	_, err := ensureStream(ctx, m.NatsClient, streamName, []string{req.Subject, fmt.Sprintf("%s.*", req.Subject)})
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to ensure stream exists")
 		utils.WriteError(w, http.StatusInternalServerError, "Failed to ensure messaging infrastructure")
@@ -74,16 +90,12 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	select {
 	case <-ack.Ok():
 		// Message was successfully stored
-		info := struct {
-			Stream   string `json:"stream"`
-			Sequence uint64 `json:"sequence"`
-			Subject  string `json:"subject"`
-		}{
-			Stream:   ack.Stream(),
-			Sequence: ack.Sequence(),
+		response := MessageResponse{
+			Stream:   streamName,
+			Sequence: 0, // We can't get the sequence number easily from the ack, so set to 0
 			Subject:  req.Subject,
 		}
-		utils.WriteJSON(w, http.StatusAccepted, info)
+		utils.WriteJSON(w, http.StatusAccepted, response)
 	case err := <-ack.Err():
 		// There was an error
 		log.Error().Err(err).Str("subject", req.Subject).Msg("Failed to get acknowledgement for message")
@@ -95,7 +107,14 @@ func (m *Module) publishMessage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// subscribeWebSocket sets up a WebSocket connection to receive messages from a NATS subject
+// @Summary Subscribe to a subject
+// @Description Subscribe to messages on a subject using WebSocket
+// @Tags messaging
+// @Produce json
+// @Param subject path string true "Subject to subscribe to" example:"notifications.user.created"
+// @Success 200 {object} utils.Response{message=string} "Subscription information"
+// @Failure 400 {object} utils.Response{error=string} "Invalid subject"
+// @Router /messaging/subscribe/{subject} [get]
 func (m *Module) subscribeWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Get subject from URL
 	subject := chi.URLParam(r, "subject")

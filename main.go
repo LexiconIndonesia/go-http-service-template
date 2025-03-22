@@ -19,9 +19,30 @@ import (
 	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/joho/godotenv"
 
+	_ "github.com/adryanev/go-http-service-template/docs"
 	_ "github.com/samber/lo"
 	_ "github.com/samber/mo"
 )
+
+// @title          Go HTTP Service API
+// @version        1.0
+// @description    API documentation for Go HTTP Service Template
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name  API Support
+// @contact.url   http://www.example.com/support
+// @contact.email support@example.com
+
+// @license.name Apache 2.0
+// @license.url  http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host     localhost:8080
+// @BasePath /v1
+// @schemes  http https
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in                         header
+// @name                       X-API-KEY
 
 func main() {
 	// INITIATE CONFIGURATION
@@ -75,7 +96,8 @@ func main() {
 		}
 	}()
 
-	log.Info().Msg("Server started successfully")
+	log.Info().Str("address", cfg.Listen.Addr()).Msg("Server started successfully")
+	log.Info().Str("swagger", fmt.Sprintf("http://%s/swagger/index.html", cfg.Listen.Addr())).Msg("Swagger documentation available at")
 
 	// Wait for shutdown signal
 	<-shutdown

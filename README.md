@@ -14,6 +14,7 @@ A modern, production-ready Go HTTP service template following best practices.
 - **Testing Support**: Example tests with mocking capabilities
 - **Configuration Management**: Environment-based configuration
 - **Messaging**: NATS and JetStream integration for pub/sub messaging
+- **API Documentation**: Swagger/OpenAPI documentation with swaggo/swag
 
 ## Getting Started
 
@@ -32,7 +33,8 @@ A modern, production-ready Go HTTP service template following best practices.
 4. Run `sqlc generate`, the generated files will be in `repository` folder
 5. Run `make install`
 6. (Optional) Install NATS server:
-   ```
+
+   ```sh
    # Using Docker
    docker run -p 4222:4222 -p 8222:8222 nats -js
 
@@ -45,7 +47,7 @@ A modern, production-ready Go HTTP service template following best practices.
 
 For local development with hot reloading:
 
-```
+```sh
 ./run-dev.sh
 ```
 
@@ -53,21 +55,39 @@ For local development with hot reloading:
 
 1. Run `make build`
 2. Execute `bin/app`
+3. Visit `http://localhost:8080/swagger/index.html` to access the API documentation
 
 ## Project Structure
 
-```
+```md
 .
 ├── common/            # Common utilities and models
 │   ├── db/            # Database access layer
 │   ├── messaging/     # NATS/JetStream messaging layer
 │   ├── models/        # Domain models
 │   └── utils/         # Utility functions
+├── docs/              # Swagger documentation
 ├── middlewares/       # HTTP middleware
 ├── migrations/        # Database migrations
 ├── module/            # Feature modules (resources)
 ├── repository/        # Database repositories (generated)
 └── main.go            # Application entry point
+```
+
+## API Documentation
+
+The API documentation is available via Swagger UI at `http://localhost:8080/swagger/index.html` when the service is running.
+
+### Generating Documentation
+
+The API documentation is generated using [swaggo/swag](https://github.com/swaggo/swag). To update the documentation after making changes to the API:
+
+```bash
+# Install swag CLI if you don't have it already
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate/update the documentation
+swag init
 ```
 
 ## Messaging with NATS/JetStream

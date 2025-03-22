@@ -10,10 +10,12 @@ import (
 	"github.com/adryanev/go-http-service-template/common/messaging"
 	"github.com/adryanev/go-http-service-template/module"
 
+	_ "github.com/adryanev/go-http-service-template/docs"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/rs/zerolog/log"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type AppHttpServer struct {
@@ -82,6 +84,11 @@ func (s *AppHttpServer) setupRoute() {
 
 	// Create the module with dependency injection
 	mod := module.NewModule(s.db, s.natsClient)
+
+	// API Documentation with Swagger
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"), // The URL pointing to API definition
+	))
 
 	r.Route("/v1", func(r chi.Router) {
 		// r.Use(middlewares.AccessTime())

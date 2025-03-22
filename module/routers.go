@@ -52,7 +52,12 @@ func Router() *chi.Mux {
 	return r
 }
 
-// testRoute is the handler for the test route
+// @Summary Health check
+// @Description Simple health check endpoint to verify the service is running
+// @Tags system
+// @Produce json
+// @Success 200 {object} utils.Response{message=string} "Service is healthy"
+// @Router / [get]
 func (m *Module) testRoute(w http.ResponseWriter, r *http.Request) {
 	utils.WriteMessage(w, 200, "Hello with dependency injection")
 }
