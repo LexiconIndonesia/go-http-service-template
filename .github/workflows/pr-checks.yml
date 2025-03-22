@@ -20,6 +20,8 @@ jobs:
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 
+      - name: Install dependencies
+        run: go mod download
       - name: Run linters
         run: golangci-lint run --timeout=5m
 
@@ -58,8 +60,9 @@ jobs:
         run: go build -v -o app
 
       - name: Upload built binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: application
           path: app
           retention-days: 1
+          if-no-files-found: error
