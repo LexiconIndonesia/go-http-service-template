@@ -11,7 +11,7 @@ A modern, production-ready Go HTTP service template following best practices.
 - **Database Integration**: PostgreSQL integration with connection pooling
 - **Input Validation**: Request validation using go-playground/validator
 - **Middleware Support**: Configurable middleware chain using Chi
-- **Testing Support**: Example tests with mocking capabilities
+- **Testing Support**: Comprehensive tests with mocking capabilities
 - **Configuration Management**: Environment-based configuration
 - **Messaging**: NATS and JetStream integration for pub/sub messaging
 - **API Documentation**: Swagger/OpenAPI documentation with swaggo/swag
@@ -28,10 +28,34 @@ A modern, production-ready Go HTTP service template following best practices.
 ### Installation
 
 1. Clone the repository
+
+   ```sh
+   git clone https://github.com/LexiconIndonesia/go-http-service-template.git
+   cd go-http-service-template
+   ```
+
 2. Copy `.env.example` to `.env`
+
+   ```sh
+   cp .env.example .env
+   ```
+
 3. Write SQL queries in `query.sql`
-4. Run `sqlc generate`, the generated files will be in `repository` folder
-5. Run `make install`
+
+4. Run SQLC to generate database code
+
+   ```sh
+   sqlc generate
+   ```
+
+   The generated files will be in the `repository` folder
+
+5. Install dependencies
+
+   ```sh
+   make install
+   ```
+
 6. (Optional) Install NATS server:
 
    ```sh
@@ -53,8 +77,18 @@ For local development with hot reloading:
 
 ### Usage
 
-1. Run `make build`
-2. Execute `bin/app`
+1. Build the application
+
+   ```sh
+   make build
+   ```
+
+2. Execute the binary
+
+   ```sh
+   bin/app
+   ```
+
 3. Visit `http://localhost:8080/swagger/index.html` to access the API documentation
 
 ## Project Structure
@@ -67,12 +101,41 @@ For local development with hot reloading:
 │   ├── models/        # Domain models
 │   └── utils/         # Utility functions
 ├── docs/              # Swagger documentation
+├── features/          # Feature modules
+│   ├── hello/         # Example module with DI
+│   ├── messaging/     # Messaging feature
+│   └── user/          # User management feature
 ├── middlewares/       # HTTP middleware
 ├── migrations/        # Database migrations
-├── module/            # Feature modules (resources)
 ├── repository/        # Database repositories (generated)
+├── server.go          # HTTP server setup
 └── main.go            # Application entry point
 ```
+
+## Testing
+
+The template includes comprehensive unit tests for each feature module. Run tests with:
+
+```sh
+go test ./...
+```
+
+### Test Structure
+
+Tests are organized alongside the code they test:
+
+- `features/user/handlers_test.go`: Tests for user handlers
+- `features/messaging/handlers_test.go`: Tests for messaging handlers
+- `features/hello/router_test.go`: Tests for hello module
+
+### Testing Approach
+
+The tests use Go's standard testing package and follow these patterns:
+
+1. **Table-driven tests**: For testing multiple scenarios
+2. **Mocks and stubs**: For isolating dependencies
+3. **HTTP testing**: Using `httptest` package for handler tests
+4. **Request validation**: Testing both valid and invalid requests
 
 ## API Documentation
 
@@ -142,6 +205,10 @@ This template follows Go best practices including:
 - Graceful shutdowns
 - Clean separation of concerns
 
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 ---
 
-© 2024
+© 2024 Lexicon Indonesia
