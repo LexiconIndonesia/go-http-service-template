@@ -46,15 +46,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          context: .
-          push: false
-          load: true
-          tags: pr-test:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build binary
+        run: go build -v -o app
+
+      - name: Upload built binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: application
+          path: app
+          retention-days: 1
