@@ -8,9 +8,9 @@ import (
 
 	"github.com/adryanev/go-http-service-template/common/db"
 	"github.com/adryanev/go-http-service-template/common/messaging"
-	helloPkg "github.com/adryanev/go-http-service-template/internal/hello"
-	messagingPkg "github.com/adryanev/go-http-service-template/internal/messaging"
-	userPkg "github.com/adryanev/go-http-service-template/internal/user"
+	helloPkg "github.com/adryanev/go-http-service-template/features/hello"
+	messagingPkg "github.com/adryanev/go-http-service-template/features/messaging"
+	userPkg "github.com/adryanev/go-http-service-template/features/user"
 
 	_ "github.com/adryanev/go-http-service-template/docs"
 	"github.com/go-chi/chi/v5"
