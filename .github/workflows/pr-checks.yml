@@ -21,10 +21,8 @@ jobs:
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 
       - name: Install dependencies
-        run: go mod download
+        run: go mod tidy && go mod vendor
 
-      - name: Vendor dependencies
-        run: go mod vendor
 
       - name: Run linters
         run: golangci-lint run --timeout=5m
@@ -41,10 +39,7 @@ jobs:
           go-version: '1.24.1'
 
       - name: Install dependencies
-        run: go mod download
-
-      - name: Vendor dependencies
-        run: go mod vendor
+        run: go mod tidy && go mod vendor
 
       - name: Run tests
         run: go test -v ./... -race
@@ -61,7 +56,7 @@ jobs:
           go-version: '1.24.1'
 
       - name: Install dependencies
-        run: go mod download
+        run: go mod tidy && go mod vendor
 
       - name: Build binary
         run: go build -v -o app
