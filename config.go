@@ -87,25 +87,61 @@ func (l *listenConfig) loadFromEnv() {
 	loadEnvUint("LISTEN_PORT", &l.Port)
 }
 
+type hostConfig struct {
+	// Add any necessary fields for host configuration
+}
+
+func (h *hostConfig) loadFromEnv() {
+	// Implement loading from environment variables
+}
+
+type natsConfig struct {
+	URL      string
+	Username string
+	Password string
+}
+
+func (c *natsConfig) loadFromEnv() {
+	c.URL = getEnv("NATS_URL", "nats://localhost:4222")
+	c.Username = getEnv("NATS_USERNAME", "")
+	c.Password = getEnv("NATS_PASSWORD", "")
+}
+
 type config struct {
-	Listen        listenConfig `json:"listen"`
-	PgSql         pgSqlConfig  `json:"pgsql"`
-	BackendApiKey string       `json:"api_key"`
-	ServerSalt    string       `json:"salt"`
+	Host          hostConfig
+	Listen        listenConfig
+	PgSql         pgSqlConfig
+	BackendApiKey string
+	ServerSalt    string
+	Nats          natsConfig
 }
 
 func (c *config) loadFromEnv() {
+	c.Host.loadFromEnv()
 	c.Listen.loadFromEnv()
 	c.PgSql.loadFromEnv()
-	loadEnvString("API_KEY", &c.BackendApiKey)
-	loadEnvString("SALT", &c.ServerSalt)
+	c.BackendApiKey = getEnv("BACKEND_API_KEY", "")
+	c.ServerSalt = getEnv("SERVER_SALT", "")
+	c.Nats.loadFromEnv()
 }
 
 func defaultConfig() config {
 	return config{
-		Listen:        defaultListenConfig(),
-		PgSql:         defaultPgSql(),
+		Host: hostConfig{
+			// ... existing code ...
+		},
+		Listen: listenConfig{
+			// ... existing code ...
+		},
+		PgSql: pgSqlConfig{
+			// ... existing code ...
+		},
 		BackendApiKey: "",
 		ServerSalt:    "",
+		Nats: natsConfig{
+			URL:      "nats://localhost:4222",
+			Username: "",
+			Password: "",
+		},
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/adryanev/go-http-service-template/common/db"
+	"github.com/adryanev/go-http-service-template/common/messaging"
 	"github.com/adryanev/go-http-service-template/module"
 
 	"github.com/go-chi/chi/v5"
@@ -16,10 +17,11 @@ import (
 )
 
 type AppHttpServer struct {
-	router *chi.Mux
-	cfg    config
-	server *http.Server
-	db     *db.DB
+	router     *chi.Mux
+	cfg        config
+	server     *http.Server
+	db         *db.DB
+	natsClient *messaging.NatsClient
 }
 
 func NewAppHttpServer(cfg config) (*AppHttpServer, error) {
@@ -60,17 +62,26 @@ func (s *AppHttpServer) SetDB(db *db.DB) {
 	s.db = db
 }
 
+// SetNatsClient sets the NATS client dependency
+func (s *AppHttpServer) SetNatsClient(client *messaging.NatsClient) {
+	s.natsClient = client
+}
+
 func (s *AppHttpServer) setupRoute() {
 	r := s.router
 	// cfg := s.cfg
 
-	// Check if DB is set
+	// Check if dependencies are set
 	if s.db == nil {
 		log.Warn().Msg("DB dependency not set, using legacy global access")
 	}
 
+	if s.natsClient == nil {
+		log.Warn().Msg("NATS client dependency not set")
+	}
+
 	// Create the module with dependency injection
-	mod := module.NewModule(s.db)
+	mod := module.NewModule(s.db, s.natsClient)
 
 	r.Route("/v1", func(r chi.Router) {
 		// r.Use(middlewares.AccessTime())

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/adryanev/go-http-service-template/common/db"
+	"github.com/adryanev/go-http-service-template/common/messaging"
 	"github.com/adryanev/go-http-service-template/common/utils"
 
 	"github.com/go-chi/chi/v5"
@@ -11,13 +12,15 @@ import (
 
 // Module contains all dependencies needed for the module
 type Module struct {
-	DB *db.DB
+	DB         *db.DB
+	NatsClient *messaging.NatsClient
 }
 
 // NewModule creates a new module with dependencies
-func NewModule(db *db.DB) *Module {
+func NewModule(db *db.DB, natsClient *messaging.NatsClient) *Module {
 	return &Module{
-		DB: db,
+		DB:         db,
+		NatsClient: natsClient,
 	}
 }
 
@@ -27,6 +30,12 @@ func (m *Module) Router() http.Handler {
 
 	// Basic routes
 	r.Get("/", m.testRoute)
+
+	// Messaging routes
+	r.Route("/messaging", func(r chi.Router) {
+		r.Post("/publish", m.publishMessage)
+		r.Get("/subscribe/{subject}", m.subscribeWebSocket)
+	})
 
 	// User routes
 	r.Route("/users", func(r chi.Router) {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/adryanev/go-http-service-template/common/db"
+	"github.com/adryanev/go-http-service-template/common/messaging"
 	"github.com/adryanev/go-http-service-template/repository"
 
 	"github.com/rs/zerolog/log"
@@ -46,6 +47,13 @@ func main() {
 	}
 	defer dbConn.Close()
 
+	// INITIATE NATS CLIENT
+	natsClient, err := setupNatsClient(cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to setup NATS client")
+	}
+	defer natsClient.Close()
+
 	// INITIATE SERVER
 	server, err := NewAppHttpServer(cfg)
 	if err != nil {
@@ -54,6 +62,7 @@ func main() {
 
 	// Inject dependencies
 	server.SetDB(dbConn)
+	server.SetNatsClient(natsClient)
 
 	// Setup routes
 	server.setupRoute()
@@ -125,4 +134,20 @@ func setupDatabase(ctx context.Context, cfg config) (*db.DB, error) {
 	}
 
 	return dbConn, nil
+}
+
+// setupNatsClient initializes the NATS client
+func setupNatsClient(cfg config) (*messaging.NatsClient, error) {
+	natsConfig := messaging.Config{
+		URL:      cfg.Nats.URL,
+		Username: cfg.Nats.Username,
+		Password: cfg.Nats.Password,
+	}
+
+	client, err := messaging.NewNatsClient(natsConfig)
+	if err != nil {
+		return nil, fmt.Errorf("creating NATS client: %w", err)
+	}
+
+	return client, nil
 }
