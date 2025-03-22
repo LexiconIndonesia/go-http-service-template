@@ -209,6 +209,34 @@ This template follows Go best practices including:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+### Commit Message Convention
+
+This repository follows [Conventional Commits](https://www.conventionalcommits.org/) specification. Commit messages should be structured as follows:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Types include:
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation changes
+- `style`: Changes that do not affect the meaning of the code (formatting, etc)
+- `refactor`: Code changes that neither fix a bug nor add a feature
+- `perf`: Performance improvements
+- `test`: Adding or correcting tests
+- `build`: Changes to build system or dependencies
+- `ci`: Changes to CI configuration
+- `chore`: Other changes that don't modify src or test files
+
+Example: `feat(user): add user authentication endpoint`
+
+PR checks will verify that commit messages adhere to this convention.
+
 ---
 
 © 2024 Lexicon Indonesia
